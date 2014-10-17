@@ -534,6 +534,49 @@ static const struct pin_checklist_t pin_checklist[] = {
     { PPI_AVR_BUFF, 0, &valid_pins},
 };
 
+static int ft245r_usb_ftdi_reset(struct ftdi_context *ftdi)
+{
+        if (ftdi_usb_reset(ftdi) < 0)
+                return -1;
+#if defined(HAVE_LIBFTDI1) && defined(HAVE_LIBUSB_1_0)
+        if (libusb_reset_device(ftdi->usb_dev) < 1)
+                return -1;
+#endif
+
+        return 0;
+}
+
+static int ft245r_usb_ftdi_close(struct ftdi_context *ftdi)
+{
+#if defined(HAVE_LIBFTDI1) && defined(HAVE_LIBUSB_1_0)
+        libusb_device *dev = NULL;
+        int interface;
+
+        /* Remember the USB device and ftdi_sio interface */
+        if (ftdi->usb_dev) {
+                dev = libusb_get_device(ftdi->usb_dev);
+                interface = ftdi->interface;
+        }
+#endif
+
+        /* Close the FTDI */
+        if (ftdi_usb_close(ftdi) < 0)
+                return -1;
+        
+#if defined(HAVE_LIBFTDI1) && defined(HAVE_LIBUSB_1_0)
+        /* Reattach the ftdi_sio kernel module to the USB device */
+        if (dev) {
+                libusb_device_handle *handle = NULL;
+
+                if (libusb_open(dev, &handle) >= 0) {
+                        libusb_attach_kernel_driver(handle, interface);
+                        libusb_close(handle);
+                }
+        }
+#endif
+        return 0;
+}
+
 static int ft245r_open(PROGRAMMER * pgm, char * port) {
     int rv;
     int devnum = -1;
@@ -643,7 +686,8 @@ static int ft245r_open(PROGRAMMER * pgm, char * port) {
     return 0;
 
 cleanup:
-    ftdi_usb_close(handle);
+    ft245r_usb_ftdi_reset(handle);
+    ft245r_usb_ftdi_close(handle);
 cleanup_no_usb:
     ftdi_deinit (handle);
     free(handle);
@@ -657,10 +701,11 @@ static void ft245r_close(PROGRAMMER * pgm) {
         // I think the switch to BB mode and back flushes the buffer.
         ftdi_set_bitmode(handle, 0, BITMODE_SYNCBB); // set Synchronous BitBang, all in puts
         ftdi_set_bitmode(handle, 0, BITMODE_RESET); // disable Synchronous BitBang
-        ftdi_usb_close(handle);
-        ftdi_deinit (handle);
         pthread_cancel(readerthread);
         pthread_join(readerthread, NULL);
+        ft245r_usb_ftdi_reset(handle);
+        ft245r_usb_ftdi_close(handle);
+        ftdi_deinit (handle); // TODO this works with libftdi 0.20, but hangs with 1.0
         free(handle);
         handle = NULL;
     }
