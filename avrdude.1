@@ -18,7 +18,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd DATE January 17, 2014
+.Dd DATE November 23, 2014
 .Os
 .Dt AVRDUDE 1
 .Sh NAME
@@ -257,6 +257,8 @@ programmer's entry of the configuration file.
 .It Fl B Ar bitclock
 Specify the bit clock period for the JTAG interface or the ISP clock (JTAG ICE only).
 The value is a floating-point number in microseconds.
+Alternatively, the value might be suffixed with "Hz", "kHz", or "MHz",
+in order to specify the bit clock frequency, rather than a period.
 The default value of the JTAG ICE results in about 1 microsecond bit
 clock period, suitable for target MCUs running at 4 MHz clock and
 above.
@@ -509,7 +511,6 @@ actual programmer has been attached to.
 The port is assumed to be properly configured, for example using a
 transparent 8-bit data connection without parity at 115200 Baud
 for a STK500.
-.Em This feature is currently not implemented for Win32 systems.
 .It Fl q
 Disable (or quell) output of the progress bar while reading or writing
 to the device.  Specify it a second time for even quieter operation.
@@ -1001,9 +1002,7 @@ This sets the AUX pin to output a frequency of
 kHz. Connecting
 the AUX pin to the XTAL1 pin of your MCU, you can provide it a clock, 
 for example when it needs an external clock because of wrong fuses settings.
-This setting is only available in ASCII mode. (The lower limit was chosen so
-the CPU frequency is at least for four times the SPI frequency which is in 
-ASCII mode 30kHz.)  
+Make sure the CPU frequency is at least four times the SPI frequency.  
 .It Ar serial_recv_timeout=<1...>
 This sets the serial receive timeout to the given value. 
 The timeout happens every time avrdude waits for the BusPirate prompt. 

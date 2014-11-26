@@ -59,9 +59,9 @@ static struct termios original_termios;
 static int saved_original_termios;
 
 #if !defined __linux__
-/* The support for other baud rates is imlemented for linux only.
- * For linux this mapping is no longer needed
- * For mac os x some other rates may also work*/
+/* For linux this mapping is no longer needed.
+ * (OSX and *BSD do not need this mapping either because for them,
+ * Bxxx is the same as xxx.) */
 static struct baud_mapping baud_lookup_table [] = {
   { 1200,   B1200 },
   { 2400,   B2400 },
@@ -142,11 +142,15 @@ static int ser_setspeed(union filedescriptor *fd, long baud)
   termios.c_cc[VMIN]  = 1;
   termios.c_cc[VTIME] = 0;
 #ifdef __linux__
-  /* Support for custom baud rate for linux is implemented by setting a dummy baud rate of 38400 and manupulating the custom divider of the serial interface*/
+  /* Support for custom baud rate for linux is implemented by setting
+   * a dummy baud rate of 38400 and manupulating the custom divider of
+   * the serial interface*/
   struct serial_struct  ss;
   int ioret = ioctl(fd->ifd, TIOCGSERIAL, &ss);
   if (ioret < 0){
-    fprintf(stderr, "Cannot get serial port settings. ioctl returned %d\n", ioret);
+    avrdude_message(MSG_INFO,
+		    "%s: Cannot get serial port settings. ioctl returned %d\n",
+		    progname, ioret);
     return -errno;
   }
   ss.flags = (ss.flags & ~ASYNC_SPD_MASK) | ASYNC_SPD_CUST;
@@ -154,32 +158,44 @@ static int ser_setspeed(union filedescriptor *fd, long baud)
   unsigned int closestSpeed = ss.baud_base / ss.custom_divisor;
 
   if (closestSpeed < speed * 98 / 100 || closestSpeed > speed * 102 / 100) {
-    fprintf(stderr, "Cannot set serial port speed to %d. Closest possible is %d\n", speed, closestSpeed);
+    avrdude_message(MSG_INFO,
+		    "%s: Cannot set serial port speed to %d. Closest possible is %d\n",
+		    progname, speed, closestSpeed);
     return -errno;
   }
   ioret= ioctl(fd->ifd, TIOCSSERIAL, &ss);
   if (ioret < 0){
-    fprintf(stderr, "Cannot set serial port speed to %d. ioctl returned %d\n", speed, ioret);
+    avrdude_message(MSG_INFO,
+		    "%s: Cannot set serial port speed to %d. ioctl returned %d\n",
+		    progname, speed, ioret);
     return -errno;
   }
   if (cfsetispeed(&termios, B38400) < 0){
-    fprintf(stderr, "cfsetispeed: failed to set dummy baud\n");
+    avrdude_message(MSG_INFO,
+		    "%s: cfsetispeed: failed to set dummy baud\n",
+		    progname);
     return -errno;
   }
   if (cfsetospeed(&termios, B38400) < 0){
-    fprintf(stderr, "cfsetospeed: failed to set dummy baud\n");
+    avrdude_message(MSG_INFO,
+		    "%s: cfsetospeed: failed to set dummy baud\n",
+		    progname);
     return -errno;
   }
-#else
+#else  /* !linux */
   if (cfsetospeed(&termios, speed) < 0){
-    fprintf(stderr, "cfsetospeed: failed to set speed: %d\n",speed);
+    avrdude_message(MSG_INFO,
+		    "%s: cfsetospeed: failed to set speed: %d\n",
+		    progname, speed);
     return -errno;
   }
   if (cfsetispeed(&termios, speed) < 0){
-    fprintf(stderr, "cfsetispeed: failed to set speed: %d\n",speed);
+    avrdude_message(MSG_INFO,
+		    "%s: cfsetispeed: failed to set speed: %d\n",
+		    progname, speed);
     return -errno;
   }
-#endif 
+#endif	/* linux */
   rc = tcsetattr(fd->ifd, TCSANOW, &termios);
   if (rc < 0) {
     avrdude_message(MSG_INFO, "%s: ser_setspeed(): tcsetattr() failed\n",
@@ -187,14 +203,14 @@ static int ser_setspeed(union filedescriptor *fd, long baud)
     return -errno;
   }
 #ifdef __linux__
-  /* a bit more linux specific stuff to set custom baud rates*/ 
+  /* a bit more linux specific stuff to set custom baud rates*/
   if (ioctl(fd->ifd, TIOCGSERIAL, &ss) < 0){
-    fprintf(stderr, "ioctl: failed to get port settins\n");
+    avrdude_message(MSG_INFO, "%s: ioctl: failed to get port settins\n", progname);
     return -errno;
   }
   ss.flags &= ~ASYNC_SPD_MASK;
   if (ioctl(fd->ifd, TIOCSSERIAL, &ss) < 0){
-    fprintf(stderr, "ioctl: failed to set port settins\n");
+    avrdude_message(MSG_INFO, "%s: ioctl: failed to set port settins\n", progname);
     return -errno;
   }
 #endif

@@ -1,3 +1,90 @@
+2014-11-26  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	* ser_win32.c (net_send): Properly declare argument 2 as being a
+	pointer to const data.
+
+2014-11-25  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	patch #8380: adds 500k 1M 2M baud to ser_posix.c
+	* ser_posix.c: Add a hack to allow for arbitrary baud rates on
+	Linux
+
+2014-11-25  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	patch #8437: [PATCH] Serial-over-ethernet for Win32
+	* configure.ac: Check for ws2_32 library
+	* ser_win32.c: Add hooks for forwarding serial data over
+	TCP connections
+	* avrdude.1: Drop previous restriction of -P net:
+	* doc/avrdude.conf: (Dito.)
+
+2014-11-24  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #42908: no external reset at JTAGICE3
+	* jtag3.c (jtag3_initialize): Retry with external reset applied if
+	the first sign-on attempt fails.
+
+2014-11-23  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	* main.c: Allow the -B option argument to be suffixed with Hz,
+	kHz, or MHz, in order to specify a bitclock frequency rather than
+	period.
+	* avrdude.1: Document the -B option changes.
+	* doc/avrdude.texi: (Dito.)
+
+2014-11-23  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #40870: config nitpick: ATtiny25/45/85 have 1 calibration byte not 2
+	* avrdude.conf.in (ATtiny25, ATtiny45, ATtiny85): Fix size of
+	"calibration" memory area
+
+2014-11-23  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #43137: Writing and reading incorrect pages when using jtagicemkI
+	* jtagmkI.c (jtagmkI_paged_write, jtagmkI_paged_load): correctly
+	calculate the size of a partial (non-pagesize) buffer
+
+2014-11-23  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #43078: AVRDUDE crashes after sucessfully reading/writing eeprom
+	* jtag3.c (jtag3_edbg_recv_frame): Return correct length as
+	reported in the response packet, rather than full 512 byte which
+	are always reported by the CMSIS-DAP layer.  Miscalculations
+	based on the wrongly reported length caused heap corruption
+	elsewhere, so this is presumably also a fix for bug #43078.
+
+2014-11-20  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #41561: AVRDUDE 6.0.1/USBasp doesn't write first bytes of
+	flash page
+	* usbasp.c (usbasp_spi_paged_write): Remove USBASP_BLOCKFLAG_LAST.
+	It is no longer needed, as we always write full pages now in paged
+	write mode.
+
+2014-11-19  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+
+	bug #43626: Inconsistent timeouts in stk500v2
+	* stk500v2.c (stk500v2_recv): Add a reference to the bug report
+	but don't change anything, lest to break it somehow
+
+2014-11-14  Rene Liebscher <R.Liebscher@gmx.de>
+
+	patch #8529 2 more ftdi_syncbb devices
+	* avrdude.conf.in: added 2 new programmers 
+
+2014-11-14  Rene Liebscher <R.Liebscher@gmx.de>
+
+	bug #40142 Floating point exception on Ubuntu 10.04
+	* avr.c: avoid division by zero in report_progress(), eg. when 
+	writing an empty eeprom file were total becomes 0
+
+2014-11-13  Rene Liebscher <R.Liebscher@gmx.de>
+
+	patch #8504 buspirate: Also support "cpufreq" extended parameter
+        in binary mode
+	* buspirate.c: applied patch + switch off at disable (even when
+        a reset follows) + some general whitespace/tab cleanup
+
 2014-10-15  Joerg Wunsch <j.gnu@uriah.heep.sax.de>
 
 	bug #37441: lockbits in ATxmega + avrdude = problem
