@@ -109,7 +109,7 @@ void ft245r_initpgm(PROGRAMMER * pgm) {
 #elif defined(DO_NOT_BUILD_FT245R)
 
 static int ft245r_noftdi_open (struct programmer_t *pgm, char * name) {
-    avrdude_message(MSG_INFO, "%s: error: no libftdi or libusb support. Install libftdi1/libusb-1.0 or libftdi/libusb and run configure/make again.\n",
+    avrdude_message(MSG_INFO, "%s: ft245r_noftdi_open(): error: no libftdi or libusb support. Install libftdi1/libusb-1.0 or libftdi/libusb and run configure/make again.\n",
                     progname);
 
     return -1;
@@ -621,8 +621,8 @@ static int ft245r_open(PROGRAMMER * pgm, char * port) {
     if (usbpid) {
       pid = *(int *)(ldata(usbpid));
       if (lnext(usbpid))
-	avrdude_message(MSG_INFO, "%s: Warning: using PID 0x%04x, ignoring remaining PIDs in list\n",
-		progname, pid);
+        avrdude_message(MSG_INFO, "%s: ft245r_open(): Warning: using PID 0x%04x, ignoring remaining PIDs in list\n",
+            progname, pid);
     } else {
       pid = USB_DEVICE_FT245;
     }
@@ -633,7 +633,7 @@ static int ft245r_open(PROGRAMMER * pgm, char * port) {
                                   pgm->usbsn[0]?pgm->usbsn:NULL,
                                   devnum);
     if (rv) {
-        avrdude_message(MSG_INFO, "can't open ftdi device %d. (%s)\n", devnum, ftdi_get_error_string(handle));
+        avrdude_message(MSG_INFO, "%s: ft245r_open(): can't open ftdi device %d. (%s)\n", progname, devnum, ftdi_get_error_string(handle));
         goto cleanup_no_usb;
     }
 
